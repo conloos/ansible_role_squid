@@ -1,0 +1,35 @@
+---
+- name: Remove old container
+  community.docker.docker_container:
+    name: "squid-{{ squid_version_tag }}"
+    state: absent
+
+# get squid
+- name: Pull squid container
+  community.docker.docker_image:
+    name: ubuntu/squid
+    source: pull
+    tag: "{{ squid_version_tag }}"
+    pull:
+      platform: amd64
+
+# Create container squid
+- name: Create container squid
+  community.docker.docker_container:
+    name: "squid-{{ squid_version_tag }}"
+    image: "ubuntu/squid:{{ squid_version_tag }}"
+    state: stopped
+    restart_policy: always
+    env:
+      TZ: "UTC"
+    ports:
+      # tcp - http proxy
+      - "3128:8080"
+    volumes:
+      - "{{ squid_persistent_path }}/logs:/var/log/squid"
+      - "{{ squid_persistent_path }}/data:/var/spool/squid"
+      - "{{ squid_persistent_path }}/config/squid.conf:/etc/squid/squid.conf"
+      - "{{ squid_persistent_path }}/snippet:/etc/squid/conf.d/snippet.conf"
+      - "/etc/ssl:/etc/ssl"
+      - "/usr/local/share/ca-certificates:/usr/local/share/ca-certificates"
+...

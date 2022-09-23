@@ -1,0 +1,83 @@
+---
+- name: Check if certificate exist
+  ansible.builtin.stat:
+    path: "{{ ssl_crt_path }}"
+  register: ssl_crt_path_result
+
+- name: Configure squid for acme ssl
+  block:
+    # create squid service (restart or stop container)
+    - name: Configue systemd service for squid
+      block:
+        - name: Copy squid.service to systemd configs
+          ansible.builtin.template:
+            src: squid.service.j2
+            dest: /etc/systemd/system/squid.service
+            owner: root
+            group: root
+            mode: '0644'
+
+        - name: Enable service squid.service and ensure it is not masked
+          ansible.builtin.systemd:
+            name: squid
+            state: started
+            enabled: true
+            masked: false
+            daemon_reload: true
+
+      # certificates
+      # service to create or renew certificates
+    - name: Configure squid SSL acme environment
+      block:
+          # Bash script to regenerate certificates new or renew
+        - name: Copy squid-regenerate-certificate.sh.j2
+          ansible.builtin.template:
+            src: squid-regenerate-certificate.sh.j2
+            dest: '/usr/local/bin/squid-regenerate-certificate.sh'
+            owner: root
+            group: root
+            mode: '0770'
+
+        - name: Copy squid-regenerate-certificate.service to systemd configs
+          ansible.builtin.copy:
+            src: squid-regenerate-certificate.service
+            dest: /etc/systemd/system/squid-regenerate-certificate.service
+            owner: root
+            group: root
+            mode: '0644'
+
+        - name: Enable service squid-regenerate-certificate and ensure it is not masked
+          ansible.builtin.systemd:
+            name: squid-regenerate-certificate
+            state: started
+            enabled: true
+            masked: false
+            daemon_reload: true
+
+        # copy service to trigger the squid.service for restart, because cert has changed
+        - name: Copy squid-ssl.service to systemd configs
+          ansible.builtin.copy:
+            src: squid-ssl.service
+            dest: /etc/systemd/system/squid-ssl.service
+            owner: root
+            group: root
+            mode: '0644'
+
+        # whatchdog for the cert path
+        - name: Copy squid-ssl.path
+          ansible.builtin.template:
+            src: squid-ssl.path.j2
+            dest: '/etc/systemd/system/squid-ssl.path'
+            owner: root
+            group: root
+            mode: '0644'
+
+        - name: Make sure squid-ssl.path service unit is running
+          ansible.builtin.systemd:
+            name: squid-ssl.path
+            state: started
+            enabled: true
+            masked: false
+            daemon_reload: true
+  when: ssl_crt_path is defined and ssl_crt_path_result.stat.exists
+...

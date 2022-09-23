@@ -1,0 +1,15 @@
+# Ansible manageged. Local modifactions may overwritten.
+
+[Unit]
+Description=Step TLS Renewer - Squid Certificarte
+After=network.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=oneshot
+WorkingDirectory=/usr/local/bin
+Environment=STEPPATH=/root/.step
+ExecStart=/usr/local/bin/squid-regenerate-certificate.sh
+
+[Install]
+WantedBy=multi-user.target

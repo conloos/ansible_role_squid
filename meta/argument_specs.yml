@@ -1,0 +1,19 @@
+---
+argument_specs:
+  main:
+    # https://docs.ansible.com/ansible/latest/user_guide/playbooks_reuse_roles.html#role-argument-validation
+    # https://docs.ansible.com/ansible/latest/dev_guide/developing_program_flow_modules.html#argument-spec
+    short_description: Role to create a cloud-init configuration.
+    description: Role to create a cloud-init configuration.
+    author:
+      - Frank Dornheim
+    options:
+      squid_persistent_path:
+        type: str
+        description: Path to persistent storage.
+      squid_version_tag:
+      ssl_crt_path:
+      ssl_key_path:
+      cloudinit_fqdn:
+
+...

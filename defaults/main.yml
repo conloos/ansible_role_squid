@@ -1,0 +1,7 @@
+---
+squid_persistent_path: "/srv/squid"
+squid_version_tag: "5.2-22.04_beta"
+ssl_crt_path:
+ssl_key_path:
+...
+

@@ -1,0 +1,14 @@
+---
+- name: Create squid persistent data directory
+  ansible.builtin.file:
+    path: '{{ item }}'
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+  with_items:
+    - '{{ squid_persistent_path }}/data'
+    - '{{ squid_persistent_path }}/logs'
+    - '{{ squid_persistent_path }}/config'
+    - '{{ squid_persistent_path }}/snippet'
+...

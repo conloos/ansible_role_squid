@@ -1,0 +1,19 @@
+# Ansible manageged. Local modifactions may overwritten.
+
+[Unit]
+Description=Docker restart/stop squid
+Requires=docker.service
+After=docker.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=/usr/bin/
+ExecStartPre=/usr/local/bin/squid-regenerate-certificate.sh
+ExecStart=/usr/bin/docker restart squid-{{ squid_version_tag }}
+ExecStop=/usr/bin/docker stop squid-{{ squid_version_tag }}
+TimeoutStartSec=0
+
+
+[Install]
+WantedBy=multi-user.target

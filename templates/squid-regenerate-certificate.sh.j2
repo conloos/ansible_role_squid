@@ -1,0 +1,64 @@
+#!/usr/bin/env bash
+
+# Ansible manageged. Local modifactions may overwritten.
+
+# Purpose: recreate certificate new or renew
+# Author: Frank Dornheim <dornheim@posteo.de> under GPLv2+
+# Category: Core
+# Override: False
+
+STEP_CLI_PATH=/usr/bin/step-cli
+DOCKER_PATH=/usr/bin/docker
+DOCKER_CONTAINER_NAME=squid-{{ squid_version_tag }}
+CERT_FILENAME_PATH={{ ssl_crt_path }}
+CERT_KEY_PATH={{ ssl_key_path }}
+FQDN={{ cloudinit_fqdn }}
+
+#
+# Test Block
+#
+
+# test for step-cli
+if [[ ! -f "$STEP_CLI_PATH" ]] ; then
+  echo "Can't find step-cli at: $STEP_CLI_PATH"
+  exit 1
+fi
+
+# test for cert file
+if [[ ! -f "$CERT_FILENAME_PATH" ]] ; then
+  echo "The certificate is not found. This is an Error."
+  exit 1
+fi
+
+# test for key file
+if [[ ! -f "$CERT_KEY_PATH" ]] ; then
+  echo "The certificate-key is not found. This is an Error."
+  exit 1
+fi
+
+#
+# Generating and renew Certificates
+#
+
+if [[ -f /var/run/squid-ssl.pid ]] ; then
+  /bin/kill -9 $(<"/var/run/squid-ssl.pid")
+  /bin/rm /var/run/squid-ssl.pid
+fi
+
+# Stop Container - acme needs port 80
+$DOCKER_PATH stop $DOCKER_CONTAINER_NAME
+
+# Generate Cert
+$STEP_CLI_PATH ca certificate $FQDN $CERT_FILENAME_PATH $CERT_KEY_PATH --force
+# Start cert-renewer
+/bin/nohup $STEP_CLI_PATH ca renew $CERT_FILENAME_PATH $CERT_KEY_PATH --daemon --force &
+returnValue=$?
+
+# Start Container
+$DOCKER_PATH start $DOCKER_CONTAINER_NAME
+
+if [[ $returnValue -eq 0 ]] ; then
+  echo $! > /var/run/squid-ssl.pid
+else
+  echo "Step renew exits with error."
+fi

@@ -1,0 +1,9 @@
+# Ansible manageged. Local modifactions may overwritten.
+
+[Unit]
+Description=Restart squid.service when the certificate is renewed. 
+After=network.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/systemctl restart squid.service
